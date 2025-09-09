@@ -23,6 +23,22 @@ const SubscriberTable = ({ title }) => {
     const endIndex = startIndex + itemsPerPage;
     const paginatedSessions = sessions.slice(startIndex, endIndex);
 
+
+    const [cheatFlags, setCheatFlags] = useState({});   
+const [flagsLoading, setFlagsLoading] = useState(false);
+
+const getSessionFlag = async (session) => {
+  try {
+    const res = await axios.post(`${BASE_URL}/examSession/sessionSummaryByModelType`, {
+      sessionId: session._id,
+      studentId: session.studentId, 
+    });
+    return !!res.data?.cheatingThresholdExceeded;
+  } catch {
+    return false; 
+  }
+};
+
     useEffect(() => {
         fetchSessions();
     }, [refreshKey]);
@@ -33,6 +49,8 @@ const SubscriberTable = ({ title }) => {
                 params: searchId ? { studentId: searchId } : {},
             });
             setSessions(res.data);
+            setCheatFlags({}); 
+    setCurrentPage(1); 
         } catch (err) {
             console.error('Failed to load sessions', err);
         }
@@ -43,6 +61,37 @@ const SubscriberTable = ({ title }) => {
         e.preventDefault();
         fetchSessions();
     };
+
+
+
+    useEffect(() => {
+  const loadPageFlags = async () => {
+    if (paginatedSessions.length === 0) return;
+
+    
+    const toFetch = paginatedSessions.filter(s => !(s._id in cheatFlags));
+    if (toFetch.length === 0) return;
+
+    setFlagsLoading(true);
+    try {
+      
+      const results = await Promise.allSettled(toFetch.map(getSessionFlag));
+      const updates = {};
+      results.forEach((r, i) => {
+        const sid = toFetch[i]._id;
+        updates[sid] = r.status === 'fulfilled' ? r.value : false;
+      });
+      setCheatFlags(prev => ({ ...prev, ...updates }));
+    } finally {
+      setFlagsLoading(false);
+    }
+  };
+
+  loadPageFlags();
+}, [sessions, currentPage]); 
+
+
+
 
     const openSummaryModal = async (session) => {
         try {
@@ -98,25 +147,39 @@ const SubscriberTable = ({ title }) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {paginatedSessions.map((s) => (
-                                    <tr key={s._id}>
-                                        <td>{s.studentCustomId}</td>
-                                        <td>{s.name}</td>
-                                        <td>{s.email}</td>
-                                        <td>{new Date(s.startedAt).toLocaleString()}</td>
-                                        <td>{s.endedAt ? new Date(s.endedAt).toLocaleString() : '-'}</td>
-                                        <td>{s.duration ?? '-'}</td>
-                                        <td>
+                                    {paginatedSessions.map((s) => {
+                                      const exceeded = cheatFlags[s._id]; 
+                                    
+                                      return (
+                                        <tr
+                                          key={s._id}
+                                          className={exceeded ? 'text-danger fw-semibold' : ''}
+
+                                        >
+                                          <td className={exceeded ? 'text-danger fw-semibold' : ''}>
+                                            {s.studentCustomId}
+                                            {flagsLoading && !(s._id in cheatFlags) ? (
+                                              <span className="ms-2 spinner-border spinner-border-sm" />
+                                            ) : null}
+                                          </td>
+                                          <td>{s.name}</td>
+                                          <td>{s.email}</td>
+                                          <td>{new Date(s.startedAt).toLocaleString()}</td>
+                                          <td>{s.endedAt ? new Date(s.endedAt).toLocaleString() : '-'}</td>
+                                          <td>{s.duration ?? '-'}</td>
+                                          <td>
                                             <button
-                                                className="btn btn-outline-primary btn-sm"
-                                                onClick={() => openSummaryModal(s)}
+                                              className={`btn btn-sm ${exceeded ? 'btn-danger' : 'btn-outline-primary'}`}
+                                              onClick={() => openSummaryModal(s)}
                                             >
-                                                View
+                                              View
                                             </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
                             </tbody>
+
                         </table>
                     </div>
                 </div>
@@ -181,9 +244,9 @@ const SubscriberTable = ({ title }) => {
                                 <thead>
                                     <tr>
                                         <th>Model Type</th>
-                                        <th>Total</th>
-                                        <th>True</th>
-                                        <th>False</th>
+                                        <th>Total model outs</th>
+                                        <th>Cheated</th>
+                                        <th>Not cheated</th>
                                         <th>Avg Confidence</th>
                                     </tr>
                                 </thead>
