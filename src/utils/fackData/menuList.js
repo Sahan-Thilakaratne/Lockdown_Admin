@@ -25,6 +25,12 @@ export const menuList = [
                 path: "/admin/sub",
                 subdropdownMenu: false
             },
+            {
+                id: 2,
+                name: "Highly detected list",
+                path: "/admin/sub-high",
+                subdropdownMenu: false
+            },
 
         ]
     },

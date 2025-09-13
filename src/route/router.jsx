@@ -21,6 +21,8 @@ import Package from "../pages/package/package";
 import AddPackage from "../pages/package/add-package";
 import UpdatePackage from "../pages/package/update-package";
 import UserRegister from "../pages/user/student-register";
+import HighRiskSessionsP from "../pages/subscribe/HighRisk";
+
 
 export const router = createBrowserRouter([
     {
@@ -38,6 +40,10 @@ export const router = createBrowserRouter([
             {
                 path: "/admin/sub",
                 element: <Subscribe />
+            },
+            {
+                path: "/admin/sub-high",
+                element: <HighRiskSessionsP />
             },
             {
                 path: "/admin/user-list",
