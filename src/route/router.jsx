@@ -20,6 +20,7 @@ import Custom from "../pages/custom/custom";
 import Package from "../pages/package/package";
 import AddPackage from "../pages/package/add-package";
 import UpdatePackage from "../pages/package/update-package";
+import UserRegister from "../pages/user/student-register";
 
 export const router = createBrowserRouter([
     {
@@ -41,6 +42,10 @@ export const router = createBrowserRouter([
             {
                 path: "/admin/user-list",
                 element: <UserDetails />
+            },
+            {
+                path: "/admin/student-register",
+                element: <UserRegister />
             },
             {
                 path: "/admin/booking",

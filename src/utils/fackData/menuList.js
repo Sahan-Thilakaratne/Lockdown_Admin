@@ -40,6 +40,12 @@ export const menuList = [
                 path: "/admin/user-list",
                 subdropdownMenu: false
             },
+            {
+                id: 2,
+                name: "Student Register",
+                path: "/admin/student-register",
+                subdropdownMenu: false
+            },
 
         ]
     },

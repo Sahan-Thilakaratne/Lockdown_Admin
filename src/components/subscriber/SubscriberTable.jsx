@@ -338,6 +338,58 @@ const getSessionFlag = async (session) => {
                                     )}
 
 
+
+                                    {/*Typed pasted text */}
+                            <h5 className="mt-4">Typed Texts During Exam</h5>
+                                    {summaryData.typedTexts?.length > 0 ? (
+                                      <Table striped bordered hover>
+                                        <thead>
+                                          <tr>
+                                            <th>Copied Text</th>
+                                            <th>Prediction</th>
+                                            <th>Confidence</th>
+                                            <th>Timestamp</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {summaryData.typedTexts.map((item, idx) => {
+                                            const pred = (item.modelOutput || '').toLowerCase(); 
+                                            const conf =
+                                              typeof item.confidence === 'number'
+                                                ? item.confidence.toFixed(2)
+                                                : '-';
+                                        
+                                            const badgeClass =
+                                              pred === 'ai'
+                                                ? 'badge bg-danger'
+                                                : pred === 'human'
+                                                ? 'badge bg-success'
+                                                : 'badge bg-secondary';
+                                        
+                                            const badgeText = pred || 'unknown';
+                                        
+                                            return (
+                                              <tr key={idx}>
+                                                <td style={{ whiteSpace: 'pre-wrap', maxWidth: '600px' }}>{item.text}</td>
+                                                <td>
+                                                  <span className={badgeClass} style={{ fontSize: '0.85rem' }}>
+                                                    {badgeText}
+                                                  </span>
+                                                </td>
+                                                <td>{conf}</td>
+                                                <td>{item.timestamp ? new Date(item.timestamp).toLocaleString() : '-'}</td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </Table>
+                                    ) : (
+                                      <p className="text-muted">No copied texts recorded during this session.</p>
+                                    )}
+
+
+
+
                         </>
                     ) : (
                         <p>Loading summary...</p>
