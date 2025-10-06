@@ -9,11 +9,14 @@ import { Link } from 'react-router-dom';
 import { Modal, Button, Table } from 'react-bootstrap';
 
 const SubscriberTable = ({ title }) => {
+  const ORIGIN_BASE = BASE_URL.replace(/\/api\/?$/, '');
     const [sessions, setSessions] = useState([]);
     const [searchId, setSearchId] = useState('');
     const [summaryModalOpen, setSummaryModalOpen] = useState(false);
     const [summaryData, setSummaryData] = useState(null);
     const [selectedSession, setSelectedSession] = useState(null);
+
+    const [gallery, setGallery] = useState([]);
 
     const { refreshKey, isRemoved, isExpanded, handleRefresh, handleExpand, handleDelete } = useCardTitleActions();
     const [currentPage, setCurrentPage] = useState(1);
@@ -96,11 +99,20 @@ const getSessionFlag = async (session) => {
     const openSummaryModal = async (session) => {
         try {
             setSelectedSession(session);
-            const res = await axios.post(`${BASE_URL}/examSession/sessionSummaryByModelType`, {
-                sessionId: session._id,
-                studentId: session.studentId
-            });
-            setSummaryData(res.data);
+            // run both requests in parallel
+    const [summaryRes, galleryRes] = await Promise.all([
+      axios.post(`${BASE_URL}/examSession/sessionSummaryByModelType`, {
+        sessionId: session._id,
+        studentId: session.studentId,
+      }),
+      axios.get(`${BASE_URL}/face/list`, {
+        params: { sessionId: session._id, studentId: session.studentId },
+      }),
+    ]);
+
+    setSummaryData(summaryRes.data);
+    setGallery(galleryRes.data || []);
+    console.log("Image data: ", galleryRes.data)
             setSummaryModalOpen(true);
         } catch (error) {
             console.error('Failed to load summary', error);
@@ -386,6 +398,45 @@ const getSessionFlag = async (session) => {
                                     ) : (
                                       <p className="text-muted">No copied texts recorded during this session.</p>
                                     )}
+
+
+
+                        {/* Face-Pose Evidence */}
+                          <h5 className="mt-4">Face-Pose Evidence (flagged frames)</h5>
+                          {gallery.length ? (
+                            <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+                              {gallery.map((g, i) => (
+                                <div className="col" key={g._id || i}>
+                                  <div className="card h-100">
+                                    <img
+                                      src={`${ORIGIN_BASE}${g.thumbPath || g.imagePath}`}
+                                      className="card-img-top"
+                                      alt={`pose ${g.pose}`}
+                                      style={{ objectFit: 'cover', height: 180 }}
+                                    />
+                                    <div className="card-body">
+                                      <span className={`badge ${g.pose === 'left' || g.pose === 'right' ? 'bg-warning text-dark' : 'bg-danger'}`}>
+                                        {g.pose}
+                                      </span>
+                                      <div className="small text-muted mt-2">
+                                        {g.detectedAt ? new Date(g.detectedAt).toLocaleString() : ''}
+                                      </div>
+                                      <a
+                                        className="btn btn-sm btn-outline-primary mt-2"
+                                        href={`${BASE_URL}${g.imagePath}`}
+                                        target="_blank" rel="noreferrer"
+                                      >
+                                        Open full image
+                                      </a>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-muted">No flagged face-pose frames recorded for this session.</p>
+                          )}
+
 
 
 
