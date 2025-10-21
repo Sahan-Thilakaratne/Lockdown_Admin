@@ -402,7 +402,7 @@ const getSessionFlag = async (session) => {
 
 
                         {/* Face-Pose Evidence */}
-                          <h5 className="mt-4">Face-Pose Evidence (flagged frames)</h5>
+                          <h5 className="mt-4">Face Pose Evidence (flagged frames)</h5>
                           {gallery.length ? (
                             <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
                               {gallery.map((g, i) => (
@@ -438,7 +438,32 @@ const getSessionFlag = async (session) => {
                           )}
 
 
-
+                          {/* Multi-Human true events */}
+                          <h5 className="mt-4">Multi Human Detections</h5>
+                          {Array.isArray(summaryData.multiHumanTrueEvents) && summaryData.multiHumanTrueEvents.length > 0 ? (
+                            <Table striped bordered hover>
+                              <thead>
+                                <tr>
+                                  <th>#</th>
+                                  <th>Time</th>
+                                  <th>Humans Detected</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {summaryData.multiHumanTrueEvents.map((ev, idx) => (
+                                  <tr key={idx}>
+                                    <td>{idx + 1}</td>
+                                    <td>{ev.detectedAt ? new Date(ev.detectedAt).toLocaleString() : '-'}</td>
+                                    <td>
+                                      <span className="badge bg-danger">{Number.isFinite(ev.humans) ? ev.humans : '-'}</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </Table>
+                          ) : (
+                            <p className="text-muted">No multi-human cheating events recorded in this session.</p>
+                          )}
 
 
                         </>
