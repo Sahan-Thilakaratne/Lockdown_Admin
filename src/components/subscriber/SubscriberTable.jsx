@@ -33,6 +33,8 @@ const SubscriberTable = ({ title }) => {
   const [cheatFlags, setCheatFlags] = useState({});
   const [flagsLoading, setFlagsLoading] = useState(false);
 
+  const [pasteShots, setPasteShots] = useState([]); // NEW
+
   const getSessionFlag = async (session) => {
     try {
       const res = await axios.post(`${BASE_URL}/examSession/sessionSummaryByModelType`, {
@@ -90,19 +92,26 @@ const SubscriberTable = ({ title }) => {
 
   // ── Single fetch function used by all three modals
   const fetchSessionArtifacts = async (session) => {
-    setSelectedSession(session);
-    const [summaryRes, galleryRes] = await Promise.all([
-      axios.post(`${BASE_URL}/examSession/sessionSummaryByModelType`, {
-        sessionId: session._id,
-        studentId: session.studentId,
-      }),
-      axios.get(`${BASE_URL}/face/list`, {
-        params: { sessionId: session._id, studentId: session.studentId },
-      }),
-    ]);
-    setSummaryData(summaryRes.data);
-    setGallery(galleryRes.data || []);
-  };
+  setSelectedSession(session);
+
+  const [summaryRes, galleryRes, pasteRes] = await Promise.all([
+    axios.post(`${BASE_URL}/examSession/sessionSummaryByModelType`, {
+      sessionId: session._id,
+      studentId: session.studentId,
+    }),
+    axios.get(`${BASE_URL}/face/list`, {
+      params: { sessionId: session._id, studentId: session.studentId },
+    }),
+    axios.get(`${BASE_URL}/paste/list`, {                 // NEW
+      params: { sessionId: session._id, studentId: session.studentId },
+    }),
+  ]);
+
+  setSummaryData(summaryRes.data);
+  setGallery(galleryRes.data || []);
+  setPasteShots(pasteRes.data || []);                     // NEW
+};
+
 
   // ── Openers
   const openSummaryModal = async (session) => {
@@ -405,7 +414,49 @@ const SubscriberTable = ({ title }) => {
                   </tbody>
                 </Table>
               ) : <p className="text-muted">No typed texts recorded during this session.</p>}
+
+              {/* Paste-time Screenshots */}
+
+              <h5 className="mt-4">Paste-time Screenshots</h5>
+                {Array.isArray(pasteShots) && pasteShots.length > 0 ? (
+                  <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+                    {pasteShots.map((p, i) => (
+                      <div className="col" key={p._id || i}>
+                        <div className="card h-100">
+                          <img
+                            src={`${ORIGIN_BASE}${p.imagePath}`}
+                            className="card-img-top"
+                            alt="paste evidence"
+                            style={{ objectFit: 'cover', height: 180 }}
+                          />
+                          <div className="card-body">
+                            <div className="small text-muted">
+                              {p.capturedAt ? new Date(p.capturedAt).toLocaleString() : ''}
+                            </div>
+                            <a
+                              className="btn btn-sm btn-outline-primary mt-2"
+                              href={`${BASE_URL}${p.imagePath}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Open full image
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted">No paste-time screenshots recorded for this session.</p>
+                )}
             </>
+
+
+            
+
+
+
+
           ) : <p>Loading…</p>}
         </Modal.Body>
         <Modal.Footer>
